@@ -25,16 +25,13 @@ currentPan=$(xrandr |
              cut -c8- |                 # Remove "current" (first 8 chars)
              tr -d "[:space:]")         # Remove all whitespace
 
-# Get max res supported by hardware:
+# Get max res supported by hardware (first line with resolution followed by refresh rate)
 res=$("xrandr" |
-      sed '3!d' |      # Get line 3 (should be the the correct line...)
-      xargs |          # Remove leading whitespace
-      grep -o '^\S*')  # Remove stuff after resolution (starting with 1st ' ')
+      sed -ne '/^\s\+[0-9]\+x[0-9]\+\s\+[0-9]\+\.[0-9]\+/ { s/^\s\+\([0-9]\+x[0-9]\+\)\s\+.*$/\1/; p; q}')
 
-# Get display identifier:
+# Get display identifier for first connected display
 display=$("xrandr" |
-          sed '2!d' |      # Get line 2 (should be the the correct line...)
-          grep -o '^\S*')  # Remove stuff after display (starting with 1st ' ')
+          sed -ne '/^\S\+\s\+connected/ { s/^\(\S\+\)\s\+.*/\1/; p }')
 
 xRes=$(echo $res | cut -d "x" -f 1)
 yRes=$(echo $res | cut -d "x" -f 2)
@@ -48,6 +45,7 @@ echo "Display identifier:         $display"
 echo "Max hardware resolution:    $res"
 echo "Current panning resolution: $currentPan"
 echo "New panning resolution:     $pan"
+echo "Command:                    xrandr --output $display --scale $scale --panning $pan"
 
 if [ "$currentPan" != "$pan" ]; then
     xrandr --output $display --scale $scale --panning $pan
